@@ -21,12 +21,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
-//    @ExceptionHandler(MethodArgumentNotValidException.class)
-//    protected ResponseEntity<?> methodArgumentNotValidExceptionHandler(MethodArgumentNotValidException e){
-//        ErrorResponse response = ErrorResponse.builder()
-//                .errorCode(ErrorCode.ERROR_DATA.getErrorCode())
-//                .message(e.getFieldError().getDefaultMessage())
-//                .build();
-//        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-//    }
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    protected ResponseEntity<?> methodArgumentNotValidExceptionHandler(MethodArgumentNotValidException e){
+        ErrorResponse response = ErrorResponse.builder()
+                .errorCode(ErrorCode.ERROR_DATA.getErrorCode())
+                .message(e.getFieldError().getDefaultMessage())
+                .build();
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
 }
