@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quiz Questions</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background-color: #f4f4f4;
+      }
+      .question-container {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        margin-bottom: 15px;
+      }
+      .question {
+        font-size: 18px;
+        font-weight: bold;
+      }
+      .question-id {
+        font-size: 14px;
+        color: gray;
+      }
+      .answer-list {
+        margin-top: 10px;
+        padding-left: 20px;
+        list-style-type: none;
+      }
+      .answer {
+        margin-bottom: 5px;
+        padding: 5px;
+        border-radius: 5px;
+        display: flex;
+        align-items: center;
+      }
+      .answer input {
+        margin-right: 10px;
+      }
+      .answer.correct {
+        background-color: #d4edda; /* Màu xanh */
+        color: #155724;
+      }
+      .answer.wrong {
+        background-color: #f8d7da; /* Màu đỏ */
+        color: #721c24;
+      }
+      .submit-btn {
+        display: block;
+        margin: 20px auto;
+        padding: 10px 20px;
+        font-size: 16px;
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .submit-btn:hover {
+        background-color: #218838;
+      }
+      #score {
+        font-size: 20px;
+        font-weight: bold;
+        text-align: center;
+        margin-top: 20px;
+        color: #333;
+      }
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  </head>
+  <body>
+    <h1>Quiz Questions</h1>
+    <div id="questions-container"></div>
+    <button class="submit-btn" onclick="submitQuiz()">Submit</button>
+    <div id="score"></div>
+    <!-- Hiển thị số điểm sau khi submit -->
+
+    <script>
+      // ✅ Hàm gọi API lấy danh sách câu hỏi
+      function fetchQuestions() {
+        $.ajax({
+          url: "http://localhost:8080/api/questions",
+          method: "GET",
+          xhrFields: { withCredentials: true },
+          success: function (questionsData) {
+            displayQuestions(questionsData);
+          },
+          error: function (xhr, status, error) {
+            console.error("Error fetching questions:", status, error);
+          },
+        });
+      }
+
+      // ✅ Hiển thị danh sách câu hỏi
+      function displayQuestions(questionsData) {
+        const container = document.getElementById("questions-container");
+        container.innerHTML = "";
+
+        questionsData.forEach((q, index) => {
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.dataset.questionId = q.id;
+
+          const questionId = document.createElement("div");
+          questionId.classList.add("question-id");
+          questionId.innerText = `Question ${index + 1}`;
+
+          const questionText = document.createElement("div");
+          questionText.classList.add("question");
+          questionText.innerText = q.question;
+
+          const answerList = document.createElement("ul");
+          answerList.classList.add("answer-list");
+
+          const inputType = q.multipleChoices ? "checkbox" : "radio";
+
+          q.answerReponseList.forEach((a) => {
+            const answerItem = document.createElement("li");
+            answerItem.classList.add("answer");
+            answerItem.dataset.answerId = a.id;
+
+            const input = document.createElement("input");
+            input.type = inputType;
+            input.name = `question-${q.id}`;
+            input.value = a.id;
+
+            answerItem.appendChild(input);
+            answerItem.appendChild(document.createTextNode(a.answer));
+            answerList.appendChild(answerItem);
+          });
+
+          questionDiv.appendChild(questionId);
+          questionDiv.appendChild(questionText);
+          questionDiv.appendChild(answerList);
+          container.appendChild(questionDiv);
+        });
+      }
+
+      // ✅ Hàm gửi dữ liệu và hiển thị kết quả
+      // function submitQuiz() {
+      //   const selectedAnswers = {};
+
+      //   document
+      //     .querySelectorAll(".question-container")
+      //     .forEach((questionDiv) => {
+      //       const questionId = questionDiv.dataset.questionId;
+      //       const checkedAnswers =
+      //         questionDiv.querySelectorAll("input:checked");
+
+      //       if (checkedAnswers.length > 0) {
+      //         selectedAnswers[questionId] = Array.from(checkedAnswers).map(
+      //           (input) => parseInt(input.value)
+      //         );
+      //       }
+      //     });
+
+      //   if (Object.keys(selectedAnswers).length === 0) {
+      //     alert("Please select at least one answer before submitting!");
+      //     return;
+      //   }
+
+      //   $.ajax({
+      //     url: "http://localhost:8080/api/submit-quiz",
+      //     method: "POST",
+      //     contentType: "application/json",
+      //     data: JSON.stringify(selectedAnswers),
+      //     success: function (response) {
+      //       console.log("Quiz submitted successfully:", response);
+      //       $("#score").text(`Your Score: ${response.point} / 10`); // Hiển thị điểm số
+
+      //       highlightAnswers(response.correctAnswer, selectedAnswers); // Đổi màu đáp án
+      //     },
+      //     error: function (xhr, status, error) {
+      //       console.error("Error submitting quiz:", status, error);
+      //       alert("Error submitting quiz. Please try again.");
+      //     },
+      //   });
+      // }
+      function submitQuiz() {
+        const data = [];
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((questionDiv) => {
+            const questionId = parseInt(questionDiv.dataset.questionId); // Lấy questionId
+            const checkedAnswers =
+              questionDiv.querySelectorAll("input:checked");
+
+            if (checkedAnswers.length > 0) {
+              const answerIds = Array.from(checkedAnswers).map((input) =>
+                parseInt(input.value)
+              );
+              data.push({ questionId, answerIds }); // Thêm vào mảng
+            }
+          });
+
+        if (data.length === 0) {
+          alert("Please select at least one answer before submitting!");
+          return;
+        }
+
+        $.ajax({
+          url: "http://localhost:8080/api/submit-quiz",
+          method: "POST",
+          contentType: "application/json",
+          data: JSON.stringify(data), // Gửi mảng JSON
+          success: function (response) {
+            console.log("Quiz submitted successfully:", response);
+            $("#score").text(`Your Score: ${response.point} / 10`); // Hiển thị điểm số
+
+            highlightAnswers(response.correctAnswer, data); // Đổi màu đáp án
+          },
+          error: function (xhr, status, error) {
+            console.error("Error submitting quiz:", status, error);
+            alert("Error submitting quiz. Please try again.");
+          },
+        });
+      }
+
+      // ✅ Hàm đổi màu đáp án đúng / sai
+      function highlightAnswers(correctAnswers, selectedAnswers) {
+        document
+          .querySelectorAll(".question-container")
+          .forEach((questionDiv) => {
+            const questionId = questionDiv.dataset.questionId;
+            const selected = selectedAnswers[questionId] || []; // Đáp án người dùng chọn
+            const correct = correctAnswers.includes(parseInt(questionId)); // Kiểm tra nếu câu hỏi có đáp án đúng
+
+            questionDiv.querySelectorAll(".answer").forEach((answerItem) => {
+              const answerId = parseInt(answerItem.dataset.answerId);
+
+              if (correctAnswers.includes(answerId)) {
+                // if (selected.includes(answerId)) {
+                //   answerItem.classList.add("correct"); // 🟢 Đáp án đúng và đã chọn
+                // } else {
+                //   answerItem.classList.add("wrong"); // 🔴 Đáp án đúng nhưng không chọn
+                // }
+                answerItem.classList.add("correct");
+              }
+            });
+          });
+      }
+
+      fetchQuestions();
+    </script>
+  </body>
+</html>
